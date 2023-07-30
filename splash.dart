@@ -1,6 +1,6 @@
+import 'package:davaocityvet/login.dart';
 import 'package:flutter/material.dart';
-import 'package:huhu/login.dart';
-import 'package:huhu/main.dart';
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

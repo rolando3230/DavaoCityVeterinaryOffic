@@ -1,11 +1,12 @@
+import 'package:davaocityvet/chatsupport.dart';
+import 'package:davaocityvet/createreport.dart';
+import 'package:davaocityvet/evaluateuser.dart';
+import 'package:davaocityvet/historydashboard.dart';
+import 'package:davaocityvet/marketscreen.dart';
+import 'package:davaocityvet/schedulescree.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:huhu/chatsupport.dart';
-import 'package:huhu/createreport.dart';
-import 'package:huhu/evluation.dart';
-import 'package:huhu/historydashboard.dart';
-import 'package:huhu/marketscreen.dart';
-import 'package:huhu/schedulescree.dart';
+
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -22,8 +23,12 @@ class HomeScreen extends StatelessWidget {
                Padding(
                  padding: const EdgeInsets.only(top: 5),
                  child: IconButton(
-          onPressed: () {
-                  FirebaseAuth.instance.signOut();
+          onPressed: () async {
+                 try {
+  await FirebaseAuth.instance.signOut();
+} catch (e) {
+  print("Error during sign out: $e");
+}
           },
           icon: const Icon(Icons.logout_sharp,
           size: 25,),

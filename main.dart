@@ -1,17 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:davaocityvet/Register.dart';
+import 'package:davaocityvet/splash.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:huhu/Register.dart';
-import 'package:huhu/evluation.dart';
-import 'package:huhu/firebase_options.dart';
-import 'package:huhu/homescreen.dart';
-import 'package:huhu/login.dart';
-import 'package:huhu/mangeacount.dart';
-import 'package:huhu/splash.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
+   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
@@ -24,10 +19,10 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return   MaterialApp(
+    return  const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      home: Login(),
+      home: SplashScreen(),
       // HomePage(),
     );
   }

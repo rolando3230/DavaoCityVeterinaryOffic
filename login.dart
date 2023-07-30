@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:davaocityvet/adminpage.dart';
+import 'package:davaocityvet/homescreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:huhu/adminpage.dart';
-import 'package:huhu/homescreen.dart';
+
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -40,10 +41,16 @@ class _LoginState extends State<Login> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             children: [
-              const SizedBox(height: 50),
-              const Text(
+              const SizedBox(height: 130),
+                  Image.asset(
+                'assets/images/city.jpg',
+                height: 200,
+                width: 200,
+              ),
+                const Text(
                 'Login',
                 style: TextStyle(
+                  color: Color(0xFF0D47A1),
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
@@ -53,7 +60,7 @@ class _LoginState extends State<Login> {
               TextField(
                 controller: usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'Enter Your Email Address',
                 ),
               ),
               const SizedBox(height: 20),
@@ -67,6 +74,11 @@ class _LoginState extends State<Login> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: loginUser,
+                style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF0D47A1)),
+                minimumSize: MaterialStateProperty.all<Size>(const Size(250, 50),
+                ),
+                 ),
                 child: const Text('Login'),
               ),
               const SizedBox(height: 20),
