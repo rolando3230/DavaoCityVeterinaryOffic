@@ -1,6 +1,8 @@
 import 'package:davaocityvet/Register.dart';
 import 'package:davaocityvet/admindashboard.dart';
-import 'package:davaocityvet/historydashboard.dart';
+import 'package:davaocityvet/darkmood.dart';
+import 'package:davaocityvet/historydashboardadmin.dart';
+import 'package:davaocityvet/login.dart';
 import 'package:davaocityvet/mangeacount.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,12 +10,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AdminPage extends StatelessWidget {
   const AdminPage({Key? key}) : super(key: key);
 
+  // Function to handle logout
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Handle Logout
+      // Navigate to the login screen after successful logout using pushReplacement
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login()));
+    } catch (e) {
+      print('Error logging out: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Page'),
+        title: const Text('Admin DashBoard'),
       ),
       drawer: Drawer(
         child: ListView(
@@ -51,8 +63,7 @@ class AdminPage extends StatelessWidget {
               leading: Icon(Icons.dashboard),
               title: const Text('Dashboard'),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)
-            =>  ChartsScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ChartsScreen()));
               },
             ),
             ListTile(
@@ -73,16 +84,14 @@ class AdminPage extends StatelessWidget {
               leading: Icon(Icons.supervised_user_circle),
               title: const Text('Manage Users'),
               onTap: () {
-               Navigator.push(context, MaterialPageRoute(builder: (context)
-            =>  UserManagementScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => UserManagementScreen()));
               },
             ),
             ListTile(
               leading: Icon(Icons.history),
               title: const Text('History'),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)
-            =>  HistoryDashboard()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => HistoryDashBoardAdmin()));
               },
             ),
             ListTile(
@@ -103,20 +112,20 @@ class AdminPage extends StatelessWidget {
               leading: Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
-                // TODO: Handle Settings navigation
+                Navigator.push(context, MaterialPageRoute(builder: (context) => DarkModeApp()));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.person_add),
+              title: const Text('Register Account'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Register()));
               },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
-          onTap: () async {
-  try {
-    await FirebaseAuth.instance.signOut(); // Handle Logout
-    // Navigate to the login screen or any other appropriate screen after successful logout.
-  } catch (e) {
-    print('Error logging out: $e');
-  }
-},
+              onTap: () => _handleLogout(context),
             ),
           ],
         ),
@@ -131,7 +140,7 @@ class AdminPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>  Register(),
+                    builder: (context) => Register(),
                   ),
                 );
               },

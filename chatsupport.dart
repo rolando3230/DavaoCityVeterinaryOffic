@@ -59,12 +59,12 @@ class FirebaseMessagingService {
   }
 }
 
-class ChatScreen extends StatefulWidget {
+class GroupChat extends StatefulWidget {
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  _GroupChatState createState() => _GroupChatState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _GroupChatState extends State<GroupChat> {
   final FirebaseMessagingService messagingService = FirebaseMessagingService();
   final TextEditingController textController = TextEditingController();
   final ScrollController scrollController = ScrollController();

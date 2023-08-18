@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:typed_data';
 
 class User {
   String id;
@@ -32,7 +31,7 @@ class User {
         name = map?['name'] ?? '',
         email = map?['email'] ?? '',
         password = map?['password'] ?? '',
-        profilePictureUrl = map?['profilePictureUrl'],
+        profilePictureUrl = map?['profilePictureUrl'] ?? '',
         age = map?['age'],
         address = map?['address'],
         birthday = (map?['birthday'] as Timestamp?)?.toDate(),
@@ -53,22 +52,6 @@ class User {
   }
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Manage User',
-      home: UserManagementScreen(),
-    );
-  }
-}
-
 class UserManagementScreen extends StatefulWidget {
   @override
   _UserManagementScreenState createState() => _UserManagementScreenState();
@@ -80,7 +63,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   @override
   void initState() {
     super.initState();
-    // Call the function to fetch user data when the screen loads
     fetchUsers();
   }
 
@@ -92,7 +74,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         users.add(User.fromMap(doc.data() as Map<String, dynamic>?));
       });
     } catch (e) {
-      // Handle errors
       print(e.toString());
     }
     return users;
@@ -105,41 +86,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     });
   }
 
-  void deleteUser(String userId) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete this user?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                try {
-                  await FirebaseFirestore.instance.collection('Users').doc(userId).delete();
-                  Navigator.of(context).pop(); // Close the dialog
-                  fetchUsers(); // Refresh the user list after deletion
-                } catch (e) {
-                  // Handle errors
-                  print(e.toString());
-                }
-              },
-              child: Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<Uint8List?> getProfilePicture(String? url) async {
-    if (url == null || url.isEmpty) return null;
+    if (url == null || url.isEmpty) {
+      return null;
+    }
 
     try {
       final ref = FirebaseStorage.instance.refFromURL(url);
@@ -151,74 +101,152 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
+  void _showContactInfoDialog(User user) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Contact Information'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Address: ${user.address ?? 'N/A'}'),
+              Text('Email: ${user.email}'),
+              Text('Contact Number: ${user.contactNumber ?? 'N/A'}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('User Management'),
-      ),
-      body: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5, // Display 5 cards in a row
-          crossAxisSpacing: 8.0,
-          mainAxisSpacing: 8.0,
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('User Management'),
+          leading: IconButton(icon: Icon(Icons.arrow_back),
+          onPressed: (){
+            Navigator.pop(context); 
+          },
+          ),
         ),
-        itemCount: users.length,
-        itemBuilder: (context, index) {
-          final user = users[index];
-          return Card(
-            elevation: 2,
-            child: InkWell(
-              onTap: () {
-                // Implement update functionality here
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => EditUserScreen(user: user)),
-                ).then((value) {
-                  // Trigger a refresh of the user list after updating
-                  if (value == true) {
-                    fetchUsers();
-                  }
-                });
-              },
-              child: Column(
-                children: [
-                  Expanded(
-                    child: FutureBuilder<Uint8List?>(
-                      future: getProfilePicture(user.profilePictureUrl),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting || snapshot.data == null) {
-                          return CircleAvatar(
-                            radius: 25,
-                            backgroundColor: Colors.grey,
-                            child: Icon(Icons.person),
-                          );
-                        } else {
-                          return CircleAvatar(
-                            radius: 25,
-                            backgroundImage: MemoryImage(snapshot.data!),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          user.name,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+        body: GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 8.0,
+          ),
+          itemCount: users.length,
+          itemBuilder: (context, index) {
+            final user = users[index];
+            return Card(
+              elevation: 2,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditUserScreen(user: user)),
+                  ).then((value) {
+                    if (value == true) {
+                      fetchUsers();
+                    }
+                  });
+                },
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 30),
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        child: FutureBuilder<Uint8List?>(
+                          future: getProfilePicture(user.profilePictureUrl),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            } else if (snapshot.hasError || snapshot.data == null) {
+                              return Image.asset(
+                                'assets/images/boy.png',
+                                width: 100,
+                                height: 100,
+                              );
+                            } else {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(50.0),
+                                child: Image.memory(
+                                  snapshot.data!,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            }
+                          },
                         ),
-                        Text(user.email),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            user.name,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(user.email),
+                          SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              _showContactInfoDialog(user);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              primary: Colors.green,
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Row(
+                                children: [
+                                  SizedBox(width: 30,),
+                                  Icon(
+                                    Icons.phone,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'Contact Info',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -240,6 +268,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   late TextEditingController addressController;
   late TextEditingController birthdayController;
   late TextEditingController contactNumberController;
+  late TextEditingController profilePictureUrlController;
 
   @override
   void initState() {
@@ -250,6 +279,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     addressController = TextEditingController(text: widget.user.address ?? '');
     birthdayController = TextEditingController(text: widget.user.birthday != null ? widget.user.birthday!.toString() : '');
     contactNumberController = TextEditingController(text: widget.user.contactNumber?.toString() ?? '');
+    profilePictureUrlController = TextEditingController(text: widget.user.profilePictureUrl ?? '');
   }
 
   void updateUser() async {
@@ -262,7 +292,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: Text('Cancel'),
             ),
@@ -277,13 +307,12 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       'address': addressController.text,
                       'birthday': DateTime.tryParse(birthdayController.text),
                       'contactNumber': int.tryParse(contactNumberController.text),
+                      'profilePictureUrl': profilePictureUrlController.text,
                     },
                   );
-                  Navigator.of(context).pop(); // Close the dialog
-                  // Notify the previous screen that the user data has been updated
+                  Navigator.of(context).pop();
                   Navigator.pop(context, true);
                 } catch (e) {
-                  // Handle errors
                   print(e.toString());
                 }
               },
@@ -338,9 +367,13 @@ class _EditUserScreenState extends State<EditUserScreen> {
               keyboardType: TextInputType.number,
             ),
             SizedBox(height: 16),
+            TextField(
+              controller: profilePictureUrlController,
+              decoration: InputDecoration(labelText: 'Profile Picture URL'),
+            ),
+            SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Implement update user functionality here
                 updateUser();
               },
               child: Text('Update User'),
@@ -351,3 +384,4 @@ class _EditUserScreenState extends State<EditUserScreen> {
     );
   }
 }
+

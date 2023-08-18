@@ -1,9 +1,10 @@
 import 'package:davaocityvet/chatsupport.dart';
 import 'package:davaocityvet/createreport.dart';
-import 'package:davaocityvet/evaluateuser.dart';
-import 'package:davaocityvet/historydashboard.dart';
-import 'package:davaocityvet/marketscreen.dart';
-import 'package:davaocityvet/schedulescree.dart';
+import 'package:davaocityvet/historydashboardinspector.dart';
+import 'package:davaocityvet/login.dart';
+import 'package:davaocityvet/market.dart';
+import 'package:davaocityvet/myevaluation.dart';
+import 'package:davaocityvet/schedulescreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -24,11 +25,7 @@ class HomeScreen extends StatelessWidget {
                  padding: const EdgeInsets.only(top: 5),
                  child: IconButton(
           onPressed: () async {
-                 try {
-  await FirebaseAuth.instance.signOut();
-} catch (e) {
-  print("Error during sign out: $e");
-}
+                _handleLogout(context);
           },
           icon: const Icon(Icons.logout_sharp,
           size: 25,),
@@ -53,19 +50,7 @@ class HomeScreen extends StatelessWidget {
                 onTap: () {
                   
                      Navigator.push(context, MaterialPageRoute(builder: (context)
-            =>  MarketScreen(imageAssets: [ 'assets/images/DSAWED.jpg',
-    'assets/images/EWDSAWE.jpg',
-    'assets/images/DSAWED.jpg',
-    'assets/images/EWDSAWE.jpg',
-    'assets/images/FDSF.jpg',
-    'assets/images/DSAWED.jpg',], titles: [
-      'Toril Public Market',
-    'Boulevard Shit',
-    'Talamo Slaughter House',
-    'AMBOT',
-    'KAPOY',
-    'HUHUHU',
-    ],)));
+            => MarketList()));
                  
                 },
               ),
@@ -82,7 +67,7 @@ class HomeScreen extends StatelessWidget {
                 title: 'Performance Evaluation',
                 onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context)
-            =>  PerformanceApp()));
+            =>  EvaluationScreen()));
                 },
               ),
               FeatureCard(
@@ -90,7 +75,7 @@ class HomeScreen extends StatelessWidget {
                 title: 'Chat Support',
                 onTap: () {
                    Navigator.push(context, MaterialPageRoute(builder: (context)
-            =>    ChatScreen()));
+            =>    GroupChat()));
                 },
               ),
               FeatureCard(
@@ -107,7 +92,7 @@ class HomeScreen extends StatelessWidget {
                 onTap: () {    
                    Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const HistoryDashboard()),
+      MaterialPageRoute(builder: (context) => const HistoryDashBoardInspector()),
     );   
                 },
               ),
@@ -157,3 +142,13 @@ class FeatureCard extends StatelessWidget {
     );
   }
 }
+
+Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Handle Logout
+      // Navigate to the login screen after successful logout using pushReplacement
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login()));
+    } catch (e) {
+      print('Error logging out: $e');
+    }
+  }

@@ -1,9 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateReport extends StatefulWidget {
   const CreateReport({
@@ -18,6 +19,8 @@ class CreateReport extends StatefulWidget {
 }
 
 class _CreateReportState extends State<CreateReport> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   late TextEditingController establishment;
   late TextEditingController typeofmeat;
   late TextEditingController headcount;
@@ -27,6 +30,8 @@ class _CreateReportState extends State<CreateReport> {
   late DateTime selectedDate;
   String? currentLocation;
   late String selectedMeat; // Initialize selectedMeat with a default value
+
+  String currentUserDisplayName = 'Unknown'; // Add this variable to hold the current user's display name
 
   @override
   void initState() {
@@ -40,6 +45,7 @@ class _CreateReportState extends State<CreateReport> {
     selectedDate = DateTime.now();
     selectedMeat = 'Chicken'; // Set the default selected meat type
     getCurrentLocation();
+    getCurrentUserDisplayName();
   }
 
   @override
@@ -97,6 +103,8 @@ class _CreateReportState extends State<CreateReport> {
                 title: 'Location',
                 readOnly: true,
               ),
+              const SizedBox(height: 20.0),
+              _buildSelectDateButton(),
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: () async {
@@ -221,18 +229,80 @@ class _CreateReportState extends State<CreateReport> {
         const SizedBox(height: 8.0),
         Container(
           color: Colors.grey[200], //
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number, // Set keyboard type to numeric
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Allow only digits
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.remove),
+                onPressed: () {
+                  if (!readOnly) {
+                    int currentValue = int.tryParse(controller.text) ?? 0;
+                    setState(() {
+                      controller.text = (currentValue - 1).toString();
+                    });
+                  } 
+                },
+              ),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number, // Set keyboard type to numeric
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Allow only digits
+                  style: const TextStyle(
+                    color: Color(0xFF0000B3), // Set text color
+                  ),
+                  readOnly: readOnly,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: readOnly ? 'Fetching location...' : '',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.add),
+                onPressed: () {
+                  if (!readOnly) {
+                    int currentValue = int.tryParse(controller.text) ?? 0;
+                    setState(() {
+                      controller.text = (currentValue + 1).toString();
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16.0),
+      ],
+    );
+  }
+
+  Widget _buildSelectDateButton() {
+    return Column(
+      children: [
+        Text(
+          'Select Date:',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18.0,
+            color: Colors.blue,
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        ElevatedButton(
+          onPressed: () async {
+            await _selectDate();
+          },
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            primary: Theme.of(context).primaryColor, // Set button background color
+          ),
+          child: Text(
+            DateFormat('yyyy-MM-dd').format(selectedDate),
             style: const TextStyle(
-              color: Color(0xFF0000B3), // Set text color
-            ),
-            readOnly: readOnly,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: readOnly ? 'Fetching location...' : '',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // Set text color
             ),
           ),
         ),
@@ -241,8 +311,7 @@ class _CreateReportState extends State<CreateReport> {
     );
   }
 
-  Future<void> createReport() async {
-    final docUser = FirebaseFirestore.instance.collection('Report').doc();
+  Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
@@ -255,50 +324,80 @@ class _CreateReportState extends State<CreateReport> {
         selectedDate = picked;
       });
     }
+  }
 
-    final newReport = Report(
-      typeofmeat: selectedMeat,
-      establishment: establishment.text,
-      headcount: headcount.text,
-      kg: kg.text,
-      condemned: condemned.text,
-      postid: widget.postid,
-      location: currentLocation ?? '',
-      date: DateFormat('yyyy-MM-dd').format(selectedDate),
-    );
+  Future<void> createReport() async {
+    try {
+      final docUser = FirebaseFirestore.instance.collection('Report').doc();
 
-    final json = newReport.toJson();
-    await docUser.set(json);
+      // Fetch the current user's display name from the state
+      String submittedBy = currentUserDisplayName;
 
-    setState(() {
-      establishment.text = '';
-      typeofmeat.text = '';
-      headcount.text = '';
-      kg.text = '';
-      condemned.text = '';
-      location.text = '';
-    });
+      final newReport = Report(
+        typeofmeat: selectedMeat,
+        establishment: establishment.text,
+        headcount: headcount.text,
+        kg: kg.text,
+        condemned: condemned.text,
+        postid: widget.postid,
+        location: currentLocation ?? '',
+        date: DateFormat('yyyy-MM-dd').format(selectedDate),
+        submittedBy: submittedBy, // Use the current user's display name here
+      );
 
-    // Show success alert
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Report submitted successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+      final json = newReport.toJson();
+      await docUser.set(json);
 
-    Navigator.pop(context);
+      setState(() {
+        establishment.text = '';
+        typeofmeat.text = '';
+        headcount.text = '';
+        kg.text = '';
+        condemned.text = '';
+        location.text = '';
+      });
+
+      // Show success alert
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Success'),
+            content: const Text('Report submitted successfully.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      print('Error creating report: $e');
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to submit report. Please try again later.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   Future<void> getCurrentLocation() async {
@@ -333,6 +432,25 @@ class _CreateReportState extends State<CreateReport> {
       print('Error getting current location: $e');
     }
   }
+
+  Future<void> getCurrentUserDisplayName() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance.collection('Users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final name = userDoc.get('name'); // Fetch the 'name' field from the document
+          if (name != null) {
+            setState(() {
+              currentUserDisplayName = name;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error getting current user display name: $e');
+    }
+  }
 }
 
 class Report {
@@ -344,6 +462,7 @@ class Report {
   final String postid;
   final String location;
   final String date;
+  final String submittedBy;
 
   Report({
     required this.typeofmeat,
@@ -354,6 +473,7 @@ class Report {
     required this.postid,
     required this.location,
     required this.date,
+    required this.submittedBy,
   });
 
   Map<String, dynamic> toJson() {
@@ -366,6 +486,7 @@ class Report {
       'postid': postid,
       'location': location,
       'date': date,
+      'submittedBy': submittedBy,
     };
   }
 }
